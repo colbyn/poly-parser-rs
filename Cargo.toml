@@ -1,0 +1,16 @@
+[package]
+name = "poly-parser"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+members = ["tree-formatter"]
+
+[dependencies]
+unicode-segmentation = "1.11.0"
+itertools = "0.12.1"
+im-lists = "0.8.1"
+colored = "2.1.0"
+
+[dependencies.tree-formatter]
+path = "tree-formatter"
