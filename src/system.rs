@@ -87,7 +87,7 @@ macro_rules! thunk {
         })
     };
     ($expr:expr) => {
-        Thunk::wrap({
+        $crate::system::Thunk::wrap({
             || $expr
         })
     };

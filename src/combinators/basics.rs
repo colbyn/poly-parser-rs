@@ -1,6 +1,8 @@
+use std::fmt::Debug;
+
 use itertools::Itertools;
 
-use crate::{data::{Either, EitherParser, Output, Parser, QuadrupleParser, TripleParser, TupleParser}, system::Lazy};
+use crate::{data::{Either, EitherParser, Output, Parser, QuadrupleParser, TripleParser, TupleParser}, system::{Lazy, Thunk}};
 
 impl<T> Parser<T> where T: Clone + 'static {
     pub fn pure(value: T) -> Self {
@@ -8,8 +10,14 @@ impl<T> Parser<T> where T: Clone + 'static {
     }
 }
 
-impl<A> Parser<A> where A: Clone + 'static {
-    pub fn and_then<B>(
+impl<T> Parser<T> {
+    pub fn fail() -> Self {
+        Self::init(|state| state.fail())
+    }
+}
+
+impl<A: Debug> Parser<A> where A: Clone + 'static {
+    pub fn and_then<B: Debug>(
         self,
         right: impl Fn(A) -> Parser<B> + 'static
     ) -> Parser<B> where B: Clone + 'static {
@@ -21,7 +29,7 @@ impl<A> Parser<A> where A: Clone + 'static {
             }
         })
     }
-    pub fn map<B>(
+    pub fn map<B: Debug>(
         self,
         right: impl Fn(A) -> B + 'static
     ) -> Parser<B> where B: Clone + 'static {
@@ -67,7 +75,7 @@ impl<A> Parser<A> where A: Clone + 'static {
             }
         })
     }
-    pub fn either_or<B: Clone + 'static>(self, other: impl Lazy<Item = Parser<B>>) -> EitherParser<A, B> {
+    pub fn either_or<B: Clone + 'static + Debug>(self, other: impl Lazy<Item = Parser<B>>) -> EitherParser<A, B> {
         EitherParser::<A, B>::init(move |state| {
             match (self.binder)(state) {
                 Output::Ok { value, state } => state.ok(Either::Left(value)),
@@ -79,5 +87,18 @@ impl<A> Parser<A> where A: Clone + 'static {
                 },
             }
         })
+    }
+    pub fn between_both_ends<B: Debug>(self, end: Parser<B>) -> TripleParser<B, A, B> where B: Clone + 'static {
+        end.clone().and2(Thunk::wrap(move || self.clone()), Thunk::wrap(move || end.clone()))
+    }
+    pub fn between<Left: Debug, Right: Debug>(
+        self,
+        left: Parser<Left>,
+        right: Parser<Right>,
+    ) -> TripleParser<Left, A, Right> where Left: Clone + 'static, Right: Clone + 'static {
+        left.and2(
+            Thunk::wrap(move || self.clone()),
+            Thunk::wrap(move || right.clone()),
+        )
     }
 }

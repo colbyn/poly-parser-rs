@@ -1,8 +1,10 @@
+use std::fmt::Debug;
+
 use crate::{data::{CharParser, FatChar, Parser}, system::{Constant, Lazy, Parsable, Thunk}};
 
 use super::*;
 
-impl<Content> InDoubleQuotes<Content> where Content: Clone + 'static {
+impl<Content: Debug> InDoubleQuotes<Content> where Content: Clone + 'static {
     pub fn parser(content: impl Lazy<Item=Parser<Content>>) -> Parser<Self> {
         let double_quote = CharParser::char('\"');
         double_quote
@@ -20,7 +22,7 @@ impl<Content> InDoubleQuotes<Content> where Content: Clone + 'static {
             })
     }
 }
-impl<Content> InSingleQuotes<Content> where Content: Clone + 'static {
+impl<Content: Debug> InSingleQuotes<Content> where Content: Clone + 'static {
     pub fn parser(content: impl Lazy<Item=Parser<Content>>) -> Parser<Self> {
         let double_quote = CharParser::char('\'');
         double_quote
@@ -38,11 +40,11 @@ impl<Content> InSingleQuotes<Content> where Content: Clone + 'static {
             })
     }
 }
-impl<Content> InSquareBrackets<Content> where Content: Clone + 'static {
+impl<Content: Debug> InSquareBrackets<Content> where Content: Clone + 'static {
     pub fn parser(content: impl Lazy<Item=Parser<Content>>) -> Parser<Self> {
         let open = CharParser::char(token::bracket::OpenSquareBracket);
         let close = Constant::wrap(CharParser::char(token::bracket::CloseSquareBracket));
-        let parser = open
+        open
             .and2(content, close)
             .map(|(l, c, r)| {
                 Self {
@@ -50,15 +52,14 @@ impl<Content> InSquareBrackets<Content> where Content: Clone + 'static {
                     content: c,
                     close_delimiter: r,
                 }
-            });
-        unimplemented!()
+            })
     }
 }
-impl<Content> InRoundBrackets<Content> where Content: Clone + 'static {
+impl<Content: Debug> InRoundBrackets<Content> where Content: Clone + 'static {
     pub fn parser(content: impl Lazy<Item=Parser<Content>>) -> Parser<Self> {
         let open = CharParser::char(token::bracket::OpenRoundBracket);
         let close = Constant::wrap(CharParser::char(token::bracket::CloseRoundBracket));
-        let parser = open
+        open
             .and2(content, close)
             .map(|(l, c, r)| {
                 Self {
@@ -66,8 +67,7 @@ impl<Content> InRoundBrackets<Content> where Content: Clone + 'static {
                     content: c,
                     close_delimiter: r,
                 }
-            });
-        unimplemented!()
+            })
     }
 }
 

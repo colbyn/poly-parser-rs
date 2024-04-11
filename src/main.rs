@@ -9,7 +9,6 @@ pub mod system;
 mod dev;
 
 fn main() {
-    let source = "Hello World!";
     dev::dev();
 }
 

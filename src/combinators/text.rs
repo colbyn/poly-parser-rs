@@ -1,15 +1,17 @@
-use crate::data::TextParser;
+use crate::data::{State, TextParser};
 
 
 
 impl TextParser {
-    pub fn token(value: impl ToString) -> Self {
-        let value = value.to_string();
+    pub fn token(value: impl Into<String>) -> Self {
+        let value = value.into();
         Self::init(move |state| {
-            match state.text.pop_prefix(&value) {
-                Some((prefix, rest)) => state.set_text(rest).ok(prefix),
-                None => state.fail()
+            if let Some((prefix, rest)) = state.text.pop_prefix(&value) {
+                assert!(prefix.to_string() == value);
+                println!("TextParser.token {prefix} => {rest:?}");
+                return State { text: rest }.ok(prefix)
             }
+            state.fail()
         })
     }
 }

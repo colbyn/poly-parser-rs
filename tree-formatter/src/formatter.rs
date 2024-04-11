@@ -1,4 +1,4 @@
-use crate::{PrettyBranch, PrettyFragment, PrettyTree, PrettyValue};
+use crate::{PrettyBranch, PrettyFragment, PrettyTree};
 use colored::Colorize;
 
 #[derive(Debug, Clone)]
@@ -161,11 +161,6 @@ impl PrettyTree {
             Self::Branch(x) => x.format(formatter),
             Self::Fragment(x) => x.format(formatter),
         }
-    }
-}
-impl PrettyValue {
-    pub fn format(&self, formatter: &Formatter) -> String {
-        formatter.leaf(&self.text)
     }
 }
 impl PrettyBranch {

@@ -25,6 +25,9 @@ impl Text {
             data: list.into_iter().collect()
         }
     }
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
     pub fn start(&self) -> Option<&FatChar> {
         self.data.first()
     }
@@ -81,18 +84,18 @@ impl Text {
         let trailing = self.set_data(trailing);
         Some((leading, trailing))
     }
-    pub fn take(&self, count: usize) -> Option<(Self, Self)> {
-        if self.data.len() < count {
-            return None
-        }
-        let leading = self.set_data(
-            self.data.take(count)
-        );
-        let trailing = self.set_data(
-            self.data.tail(count)?
-        );
-        Some((leading, trailing))
-    }
+    // pub fn take(&self, count: usize) -> Option<(Self, Self)> {
+    //     if self.data.len() < count {
+    //         return None
+    //     }
+    //     let leading = self.set_data(
+    //         self.data.take(count)
+    //     );
+    //     let trailing = self.set_data(
+    //         self.data.tail(count)?
+    //     );
+    //     Some((leading, trailing))
+    // }
     pub fn uncons(&self) -> Option<(FatChar, Self)> {
         let mut copy = self.data.clone();
         let first = copy.pop_front()?;
@@ -105,7 +108,7 @@ impl Text {
 
 impl std::fmt::Debug for Text {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f   .debug_tuple("Snippet")
+        f   .debug_tuple("Text")
             .field(&format!("{self}"))
             .finish()
     }
@@ -123,10 +126,21 @@ impl std::fmt::Display for Text {
 //―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 // SECTION NAME
 //―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct FatChar {
     pub index: PositionIndex,
     pub value: char,
+}
+
+impl std::fmt::Debug for FatChar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f   .debug_tuple("FatChar")
+            .field(&format!(
+                "{:?}",
+                self.value
+            ))
+            .finish()
+    }
 }
 
 //―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――

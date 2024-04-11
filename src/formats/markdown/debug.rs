@@ -24,7 +24,14 @@ impl ToPrettyTree for Inline {
             Self::Superscript(x) => x.to_pretty_tree(),
             Self::InlineCode(x) => x.to_pretty_tree(),
             Self::Latex(x) => x.to_pretty_tree(),
+            Self::Raw(x) => PrettyTree::key_value("Inline::Raw", x.to_pretty_tree())
         }
+    }
+}
+impl ToPrettyTree for InlineSequence {
+    fn to_pretty_tree(&self) -> tree_formatter::PrettyTree {
+        let children = self.0.iter().map(|x| x.to_pretty_tree()).collect_vec();
+        tree_formatter::PrettyTree::branch_of("InlineSequence", children)
     }
 }
 impl ToPrettyTree for Block {
@@ -52,10 +59,15 @@ impl ToPrettyTree for inline::Link {
     fn to_pretty_tree(&self) -> tree_formatter::PrettyTree {
         tree_formatter::PrettyTree::branch_of("Link", &[
             tree_formatter::PrettyTree::key_value("text", self.text.to_pretty_tree()),
-            tree_formatter::PrettyTree::key_value("open_round_bracket", self.open_round_bracket.to_pretty_tree()),
+            tree_formatter::PrettyTree::key_value("url", self.url.to_pretty_tree()),
+        ])
+    }
+}
+impl ToPrettyTree for inline::Url {
+    fn to_pretty_tree(&self) -> tree_formatter::PrettyTree {
+        tree_formatter::PrettyTree::branch_of("Url", &[
             tree_formatter::PrettyTree::key_value("destination", self.destination.to_pretty_tree()),
             tree_formatter::PrettyTree::key_value("title", self.title.to_pretty_tree()),
-            tree_formatter::PrettyTree::key_value("close_round_bracket", self.close_round_bracket.to_pretty_tree()),
         ])
     }
 }
@@ -68,65 +80,65 @@ impl ToPrettyTree for inline::Image {
     }
 }
 impl ToPrettyTree for inline::Emphasis {
-    fn to_pretty_tree(&self) -> tree_formatter::PrettyTree {
+    fn to_pretty_tree(&self) -> PrettyTree {
         tree_formatter::PrettyTree::branch_of("Emphasis", &[
-            tree_formatter::PrettyTree::key_value("start_delimiter", "start_delimiter"),
-            tree_formatter::PrettyTree::key_value("content", "content"),
-            tree_formatter::PrettyTree::key_value("end_delimiter", "end_delimiter"),
+            tree_formatter::PrettyTree::key_value("start_delimiter", self.start_delimiter.to_pretty_tree()),
+            tree_formatter::PrettyTree::key_value("content", self.content.to_pretty_tree()),
+            tree_formatter::PrettyTree::key_value("end_delimiter", self.end_delimiter.to_pretty_tree()),
         ])
     }
 }
 impl ToPrettyTree for inline::Highlight {
     fn to_pretty_tree(&self) -> tree_formatter::PrettyTree {
         tree_formatter::PrettyTree::branch_of("Highlight", &[
-            tree_formatter::PrettyTree::key_value("start_delimiter", "start_delimiter"),
-            tree_formatter::PrettyTree::key_value("content", "content"),
-            tree_formatter::PrettyTree::key_value("end_delimiter", "end_delimiter"),
+            tree_formatter::PrettyTree::key_value("start_delimiter", self.start_delimiter.to_pretty_tree()),
+            tree_formatter::PrettyTree::key_value("content", self.content.to_pretty_tree()),
+            tree_formatter::PrettyTree::key_value("end_delimiter", self.end_delimiter.to_pretty_tree()),
         ])
     }
 }
 impl ToPrettyTree for inline::Strikethrough {
     fn to_pretty_tree(&self) -> tree_formatter::PrettyTree {
         tree_formatter::PrettyTree::branch_of("Strikethrough", &[
-            tree_formatter::PrettyTree::key_value("start_delimiter", "start_delimiter"),
-            tree_formatter::PrettyTree::key_value("content", "content"),
-            tree_formatter::PrettyTree::key_value("end_delimiter", "end_delimiter"),
+            tree_formatter::PrettyTree::key_value("start_delimiter", self.start_delimiter.to_pretty_tree()),
+            tree_formatter::PrettyTree::key_value("content", self.content.to_pretty_tree()),
+            tree_formatter::PrettyTree::key_value("end_delimiter", self.end_delimiter.to_pretty_tree()),
         ])
     }
 }
 impl ToPrettyTree for inline::Subscript {
     fn to_pretty_tree(&self) -> tree_formatter::PrettyTree {
         tree_formatter::PrettyTree::branch_of("Subscript", &[
-            tree_formatter::PrettyTree::key_value("start_delimiter", "start_delimiter"),
-            tree_formatter::PrettyTree::key_value("content", "content"),
-            tree_formatter::PrettyTree::key_value("end_delimiter", "end_delimiter"),
+            tree_formatter::PrettyTree::key_value("start_delimiter", self.start_delimiter.to_pretty_tree()),
+            tree_formatter::PrettyTree::key_value("content", self.content.to_pretty_tree()),
+            tree_formatter::PrettyTree::key_value("end_delimiter", self.end_delimiter.to_pretty_tree()),
         ])
     }
 }
 impl ToPrettyTree for inline::Superscript {
     fn to_pretty_tree(&self) -> tree_formatter::PrettyTree {
         tree_formatter::PrettyTree::branch_of("Superscript", &[
-            tree_formatter::PrettyTree::key_value("start_delimiter", "start_delimiter"),
-            tree_formatter::PrettyTree::key_value("content", "content"),
-            tree_formatter::PrettyTree::key_value("end_delimiter", "end_delimiter"),
+            tree_formatter::PrettyTree::key_value("start_delimiter", self.start_delimiter.to_pretty_tree()),
+            tree_formatter::PrettyTree::key_value("content", self.content.to_pretty_tree()),
+            tree_formatter::PrettyTree::key_value("end_delimiter", self.end_delimiter.to_pretty_tree()),
         ])
     }
 }
 impl ToPrettyTree for inline::InlineCode {
     fn to_pretty_tree(&self) -> tree_formatter::PrettyTree {
         tree_formatter::PrettyTree::branch_of("InlineCode", &[
-            tree_formatter::PrettyTree::key_value("start_delimiter", "start_delimiter"),
-            tree_formatter::PrettyTree::key_value("content", "content"),
-            tree_formatter::PrettyTree::key_value("end_delimiter", "end_delimiter"),
+            tree_formatter::PrettyTree::key_value("start_delimiter", self.start_delimiter.to_pretty_tree()),
+            tree_formatter::PrettyTree::key_value("content", self.content.to_pretty_tree()),
+            tree_formatter::PrettyTree::key_value("end_delimiter", self.end_delimiter.to_pretty_tree()),
         ])
     }
 }
 impl ToPrettyTree for inline::Latex {
     fn to_pretty_tree(&self) -> tree_formatter::PrettyTree {
         tree_formatter::PrettyTree::branch_of("Latex", &[
-            tree_formatter::PrettyTree::key_value("start_delimiter", "start_delimiter"),
-            tree_formatter::PrettyTree::key_value("content", "content"),
-            tree_formatter::PrettyTree::key_value("end_delimiter", "end_delimiter"),
+            tree_formatter::PrettyTree::key_value("start_delimiter", self.start_delimiter.to_pretty_tree()),
+            tree_formatter::PrettyTree::key_value("content", self.content.to_pretty_tree()),
+            tree_formatter::PrettyTree::key_value("end_delimiter", self.end_delimiter.to_pretty_tree()),
         ])
     }
 }

@@ -1,4 +1,6 @@
-use crate::{data::{ControlFlow, ControlFlowParser, Output, Parser, State, TupleParser}, system::{Constant, Lazy}};
+use std::fmt::Debug;
+
+use crate::{data::{ControlFlow, ControlFlowParser, Output, Parser, State, TupleParser}, system::{Constant, Lazy, Thunk}};
 
 #[derive(Default)]
 pub struct SequenceSettings {
@@ -20,38 +22,42 @@ impl SequenceSettings {
         self
     }
     pub fn terminate_if_ok_<T>(mut self, terminator: Parser<T>) -> Self where T: Clone + 'static {
-        self.until_terminator = Some(ControlFlowParser::terminate_if_ok(Constant::wrap(terminator)));
+        self.until_terminator = Some(ControlFlowParser::terminate_if_ok_(terminator));
         self
     }
 }
 
-impl<A> Parser<A> where A: Clone + 'static {
+impl<A: Debug> Parser<A> where A: Clone + 'static + Debug {
     pub fn sequence(self, settings: SequenceSettings) -> Parser<Vec<A>> {
-        Parser::<Vec<A>>::init(move |state| {
+        Parser::<Vec<A>>::init(move |original| {
             let mut leading = Vec::<A>::default();
-            let mut trailing: State = state.clone();
+            let mut trailing: State = original.clone();
+            let mut trailing_text_length: usize = trailing.text.len();
+            // let mut counter = 0usize;
             'trials : while !trailing.text.is_empty() {
+                // counter += 1;
                 if let Some(terminator) = settings.until_terminator.as_ref() {
-                    match (terminator.binder.as_ref())(trailing.clone()) {
-                        Output::Ok { value: ControlFlow::Terminate, state } => {
-                            trailing = state;
-                            break 'trials;
-                        }
-                        _ => ()
+                    if let Output::Ok { value: ControlFlow::Terminate, .. } = (terminator.binder)(trailing.clone()) {
+                        break 'trials;
                     }
                 }
-                match (self.binder.as_ref())(trailing.clone()) {
-                    Output::Ok { value, state } => {
-                        trailing = state;
-                        leading.push(value);
-                        continue 'trials;
+                if let Output::Ok { value, state } = (self.binder)(trailing.clone()) {
+                    println!("Parser.sequence {value:?} {state:?}");
+                    if trailing_text_length == state.text.len() {
+                        // DON'T LOOP FOREVER
+                        break 'trials
                     }
-                    Output::Fail { .. } => break 'trials,
+                    trailing_text_length = state.text.len();
+                    leading.push(value);
+                    trailing = state;
+                    continue 'trials;
                 }
+                break 'trials
             }
             if leading.is_empty() && !settings.allow_empty.unwrap_or(false) {
-                return trailing.fail()
+                return original.fail()
             }
+            println!("Parser.sequence FINAL STATE: {leading:?} {trailing:?}");
             trailing.ok(leading)
         })
     }
@@ -63,7 +69,7 @@ impl<A> Parser<A> where A: Clone + 'static {
         let settings = SequenceSettings::default().allow_empty(false);
         self.sequence(settings)
     }
-    pub fn many_unless<B>(
+    pub fn many_unless<B: Debug>(
         self,
         other: impl Lazy<Item = Parser<B>>
     ) -> TupleParser<Vec<A>, Option<B>> where B: 'static + Clone {
@@ -72,7 +78,7 @@ impl<A> Parser<A> where A: Clone + 'static {
             .until_terminator(ControlFlowParser::terminate_if_ok(other.clone()));
         self.sequence(settings).and(other.map(|o| o.optional()))
     }
-    pub fn some_unless<B>(
+    pub fn some_unless<B: Debug>(
         self,
         other: impl Lazy<Item = Parser<B>>
     ) -> TupleParser<Vec<A>, Option<B>> where B: 'static + Clone {
@@ -81,7 +87,7 @@ impl<A> Parser<A> where A: Clone + 'static {
             .until_terminator(ControlFlowParser::terminate_if_ok(other.clone()));
         self.sequence(settings).and(other.map(|o| o.optional()))
     }
-    pub fn many_till<B>(
+    pub fn many_till<B: Debug>(
         self,
         other: impl Lazy<Item = Parser<B>>
     ) -> TupleParser<Vec<A>, B> where B: 'static + Clone {
@@ -90,7 +96,7 @@ impl<A> Parser<A> where A: Clone + 'static {
             .until_terminator(ControlFlowParser::terminate_if_ok(other.clone()));
         self.sequence(settings).and(other)
     }
-    pub fn some_till<B>(
+    pub fn some_till<B: Debug>(
         self,
         other: impl Lazy<Item = Parser<B>>
     ) -> TupleParser<Vec<A>, B> where B: 'static + Clone {
@@ -98,5 +104,41 @@ impl<A> Parser<A> where A: Clone + 'static {
             .allow_empty(false)
             .until_terminator(ControlFlowParser::terminate_if_ok(other.clone()));
         self.sequence(settings).and(other)
+    }
+    pub fn many_unless_<B: Debug>(
+        self,
+        other: Parser<B>,
+    ) -> TupleParser<Vec<A>, Option<B>> where B: 'static + Clone {
+        let settings = SequenceSettings::default()
+            .allow_empty(true)
+            .until_terminator(ControlFlowParser::terminate_if_ok_(other.clone()));
+        self.sequence(settings).and_(other.clone().optional())
+    }
+    pub fn some_unless_<B: Debug>(
+        self,
+        other: Parser<B>,
+    ) -> TupleParser<Vec<A>, Option<B>> where B: 'static + Clone {
+        let settings = SequenceSettings::default()
+            .allow_empty(false)
+            .until_terminator(ControlFlowParser::terminate_if_ok_(other.clone()));
+        self.sequence(settings).and_(other.clone().optional())
+    }
+    pub fn many_till_<B: Debug>(
+        self,
+        other: Parser<B>,
+    ) -> TupleParser<Vec<A>, B> where B: 'static + Clone {
+        let settings = SequenceSettings::default()
+            .allow_empty(true)
+            .until_terminator(ControlFlowParser::terminate_if_ok_(other.clone()));
+        self.sequence(settings).and_(other.clone())
+    }
+    pub fn some_till_<B: Debug>(
+        self,
+        other: Parser<B>,
+    ) -> TupleParser<Vec<A>, B> where B: 'static + Clone {
+        let settings = SequenceSettings::default()
+            .allow_empty(false)
+            .until_terminator(ControlFlowParser::terminate_if_ok_(other.clone()));
+        self.sequence(settings).and_(other.clone())
     }
 }

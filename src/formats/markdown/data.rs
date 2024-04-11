@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::data::Text;
 use crate::data::FatChar;
 use crate::formats::common::*;
@@ -20,7 +22,11 @@ pub enum Inline {
     Superscript(inline::Superscript),
     InlineCode(inline::InlineCode),
     Latex(inline::Latex),
+    Raw(Text)
 }
+
+#[derive(Debug, Clone)]
+pub struct InlineSequence(pub Vec<Inline>);
 
 impl Inline {
     pub const RESERVED_TOKENS: &'static [char] = &[
@@ -34,6 +40,9 @@ impl Inline {
         '~',
         '`',
     ];
+    pub fn reserved_tokens() -> HashSet<char> {
+        HashSet::from_iter(Self::RESERVED_TOKENS.iter().map(|x| *x))
+    }
 }
 
 pub mod inline {
@@ -45,10 +54,12 @@ pub mod inline {
     #[derive(Debug, Clone)]
     pub struct Link {
         pub text: InSquareBrackets<Vec<Inline>>,
-        pub open_round_bracket: FatChar,
+        pub url: InRoundBrackets<Url>,
+    }
+    #[derive(Debug, Clone)]
+    pub struct Url {
         pub destination: Text,
         pub title: Option<InDoubleQuotes<Text>>,
-        pub close_round_bracket: FatChar,
     }
     #[derive(Debug, Clone)]
     pub struct Image {
@@ -108,7 +119,7 @@ pub mod inline {
         pub start_delimiter: Token,
         /// The Tex/LaTeX literal content.
         pub content: Text,
-        /// Either a single dollar sign (`$`) or double dollar signs (`$$`); matching the start token.
+        /// Either a single dollar sign (`$`) or double dollar signs (`$$`) that matches the start delimiter.
         pub end_delimiter: Token,
     }
 }
@@ -147,13 +158,11 @@ pub mod block {
     }
     #[derive(Debug, Clone)]
     pub struct FencedCodeBlock {
-        /// The sequence of `` ` `` or `~` characters that start the block
         pub fence_start: Token,
         /// Optional language identifier for syntax highlighting
         pub info_string: Option<Text>,
         /// The actual code content
         pub content: Text,
-        /// The sequence of `` ` `` or `~` characters that end the block
         pub fence_end: Token,
     }
     #[derive(Debug, Clone)]
@@ -228,7 +237,7 @@ pub mod block {
         #[derive(Debug, Clone)]
         pub struct RowCell {
             /// Content of the cell. This could include inline formatting, links, etc.
-            pub content: Vec<Inline>,
+            pub content: InlineSequence,
             /// Delimiter token to separate this cell from the next. This could be considered optional,
             /// as the last cell in a row might not have a trailing delimiter in some Markdown formats.
             pub pipe_delimiter: Option<FatChar>,

@@ -11,4 +11,12 @@ impl ControlFlowParser {
             }
         })
     }
+    pub fn terminate_if_ok_<T>(parser: Parser<T>) -> Self where T: 'static + Clone {
+        Self::init(move |state| {
+            match (parser.clone().binder)(state.clone()) {
+                Output::Ok { .. } => state.ok(ControlFlow::Terminate),
+                Output::Fail { .. } => state.ok(ControlFlow::NoOp),
+            }
+        })
+    }
 }
